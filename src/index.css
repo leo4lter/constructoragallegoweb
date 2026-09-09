@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans bg-white text-charcoal-800 antialiased;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold tracking-tight;
+    line-height: 1.2;
+  }
+}
+
+@layer components {
+  .container-px {
+    @apply px-5 sm:px-8 lg:px-12;
+  }
+  .section-py {
+    @apply py-20 lg:py-28;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-terracotta-500 text-white font-semibold px-7 py-3.5 rounded-none transition-all duration-300 hover:bg-terracotta-600 hover:shadow-lg;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 border-2 border-charcoal-800 text-charcoal-800 font-semibold px-7 py-3.5 rounded-none transition-all duration-300 hover:bg-charcoal-800 hover:text-white;
+  }
+  .input-field {
+    @apply w-full border border-charcoal-200 bg-white px-4 py-3 text-charcoal-800 placeholder-charcoal-400 focus:border-terracotta-500 focus:outline-none focus:ring-1 focus:ring-terracotta-500 transition-colors;
+  }
+  .admin-card {
+    @apply bg-white border border-charcoal-100 shadow-sm;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F4F5F6;
+}
+::-webkit-scrollbar-thumb {
+  background: #9BA1A9;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6B727C;
+}
