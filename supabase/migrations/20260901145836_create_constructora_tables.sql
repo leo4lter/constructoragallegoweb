@@ -119,3 +119,32 @@ INSERT INTO equipment (name, description, image_url) VALUES
   ('Retroexcavadora', 'Maquinaria versátil para obras civiles, mantenimiento y refacciones.', 'https://images.pexels.com/photos/35846752/pexels-photo-35846752.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'),
   ('Excavadora Urbana', 'Equipo compacto para trabajos en zonas urbanas con espacio reducido.', 'https://images.pexels.com/photos/30751525/pexels-photo-30751525.jpeg?auto=compress&cs=tinysrgb&h=650&w=940')
 ON CONFLICT DO NOTHING;
+
+-- 4. Site Settings (Logo, Favicon & Brand)
+CREATE TABLE IF NOT EXISTS site_settings (
+  id text PRIMARY KEY DEFAULT 'default',
+  logo_url text NOT NULL DEFAULT '',
+  icon_url text NOT NULL DEFAULT '',
+  site_title text NOT NULL DEFAULT 'Constructora El Gallego',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon_select_site_settings" ON site_settings;
+CREATE POLICY "anon_select_site_settings" ON site_settings FOR SELECT
+  TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "anon_insert_site_settings" ON site_settings;
+CREATE POLICY "anon_insert_site_settings" ON site_settings FOR INSERT
+  TO anon, authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon_update_site_settings" ON site_settings;
+CREATE POLICY "anon_update_site_settings" ON site_settings FOR UPDATE
+  TO anon, authenticated USING (true) WITH CHECK (true);
+
+INSERT INTO site_settings (id, logo_url, icon_url, site_title)
+VALUES ('default', '', '', 'Constructora El Gallego')
+ON CONFLICT (id) DO NOTHING;
+

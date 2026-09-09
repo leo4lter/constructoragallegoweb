@@ -53,7 +53,10 @@ export default function AdminDashboard({
           inmediatamente en el sitio.
         </p>
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => onNavigate('projects')} className="btn-primary text-sm py-2.5 px-5">
+          <button onClick={() => onNavigate('branding')} className="btn-primary text-sm py-2.5 px-5">
+            Cambiar Logo y Favicon
+          </button>
+          <button onClick={() => onNavigate('projects')} className="btn-secondary text-sm py-2.5 px-5">
             Gestionar Proyectos
           </button>
           <button onClick={() => onNavigate('clients')} className="btn-secondary text-sm py-2.5 px-5">

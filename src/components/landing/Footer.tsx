@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
 import { MapPin, HardHat, ArrowUp } from 'lucide-react';
+import { useData } from '@/context/DataContext';
 
 export default function Footer({ onGoAdmin }: { onGoAdmin?: () => void }) {
-  const handleGoAdmin = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const { siteSettings } = useData();
+
+  const handleHiddenAdmin = () => {
     if (onGoAdmin) {
       onGoAdmin();
     } else {
@@ -22,8 +24,21 @@ export default function Footer({ onGoAdmin }: { onGoAdmin?: () => void }) {
             transition={{ duration: 0.6 }}
           >
             <div className="flex items-center gap-2.5 mb-5">
-              <HardHat className="w-7 h-7 text-terracotta-500" strokeWidth={1.5} />
-              <span className="font-display font-bold text-xl">Constructora El Gallego</span>
+              {siteSettings?.logo_url ? (
+                <img
+                  src={siteSettings.logo_url}
+                  alt="Constructora El Gallego"
+                  className="h-10 w-auto max-w-[200px] object-contain brightness-110"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <>
+                  <HardHat className="w-7 h-7 text-terracotta-500" strokeWidth={1.5} />
+                  <span className="font-display font-bold text-xl">
+                    {siteSettings?.site_title || 'Constructora El Gallego'}
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-white/60 leading-relaxed max-w-sm">
               Empresa 100% local con 18 años de trayectoria en construcción.
@@ -67,14 +82,6 @@ export default function Footer({ onGoAdmin }: { onGoAdmin?: () => void }) {
                 <li><a href="#areas" className="text-white/60 hover:text-terracotta-400 transition-colors">Áreas de Trabajo</a></li>
                 <li><a href="#capacidad" className="text-white/60 hover:text-terracotta-400 transition-colors">Capacidad Operativa</a></li>
                 <li><a href="#galeria" className="text-white/60 hover:text-terracotta-400 transition-colors">Galería</a></li>
-                <li>
-                  <button
-                    onClick={handleGoAdmin}
-                    className="text-white/60 hover:text-terracotta-400 transition-colors text-left"
-                  >
-                    Panel de Administración
-                  </button>
-                </li>
               </ul>
             </div>
             <a
@@ -95,7 +102,16 @@ export default function Footer({ onGoAdmin }: { onGoAdmin?: () => void }) {
           <p className="text-white/40 text-sm">
             © {new Date().getFullYear()} Constructora El Gallego. Todos los derechos reservados.
           </p>
-          <p className="text-white/40 text-sm">Sierra Grande · Río Negro · Argentina</p>
+          {/* Subtle discreet dot only for direct operator click if needed, or user can navigate to #/admin */}
+          <div className="flex items-center gap-3">
+            <p className="text-white/40 text-sm">Sierra Grande · Río Negro · Argentina</p>
+            <button
+              onClick={handleHiddenAdmin}
+              title="Acceso Administración"
+              aria-label="Acceso Administración"
+              className="w-2 h-2 rounded-full opacity-10 hover:opacity-75 transition-opacity bg-charcoal-500 cursor-default"
+            />
+          </div>
         </div>
       </div>
     </footer>

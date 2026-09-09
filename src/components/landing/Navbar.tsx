@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, HardHat } from 'lucide-react';
+import { useData } from '@/context/DataContext';
 
 const navLinks = [
   { label: 'Sobre Nosotros', href: '#nosotros' },
@@ -11,12 +12,12 @@ const navLinks = [
 ];
 
 export default function Navbar({
-  onGoAdmin,
   onGoHome,
 }: {
   onGoAdmin?: () => void;
   onGoHome?: () => void;
 }) {
+  const { siteSettings } = useData();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -36,16 +37,6 @@ export default function Navbar({
     }
   };
 
-  const handleGoAdmin = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMobileOpen(false);
-    if (onGoAdmin) {
-      onGoAdmin();
-    } else {
-      window.location.hash = '/admin';
-    }
-  };
-
   return (
     <>
       <motion.header
@@ -60,19 +51,30 @@ export default function Navbar({
       >
         <div className="max-w-8xl mx-auto container-px flex items-center justify-between">
           <a href="#" onClick={handleGoHome} className="flex items-center gap-2.5 group">
-            <HardHat
-              className={`w-7 h-7 transition-colors ${
-                scrolled ? 'text-terracotta-500' : 'text-white'
-              }`}
-              strokeWidth={1.5}
-            />
-            <span
-              className={`font-display font-bold text-lg tracking-tight transition-colors ${
-                scrolled ? 'text-charcoal-800' : 'text-white'
-              }`}
-            >
-              El Gallego
-            </span>
+            {siteSettings?.logo_url ? (
+              <img
+                src={siteSettings.logo_url}
+                alt="Constructora El Gallego"
+                className="h-9 w-auto max-w-[180px] object-contain"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <>
+                <HardHat
+                  className={`w-7 h-7 transition-colors ${
+                    scrolled ? 'text-terracotta-500' : 'text-white'
+                  }`}
+                  strokeWidth={1.5}
+                />
+                <span
+                  className={`font-display font-bold text-lg tracking-tight transition-colors ${
+                    scrolled ? 'text-charcoal-800' : 'text-white'
+                  }`}
+                >
+                  {siteSettings?.site_title || 'El Gallego'}
+                </span>
+              </>
+            )}
           </a>
 
           <nav className="hidden lg:flex items-center gap-8">
@@ -87,16 +89,6 @@ export default function Navbar({
                 {link.label}
               </a>
             ))}
-            <button
-              onClick={handleGoAdmin}
-              className={`text-sm font-semibold border px-5 py-2 transition-all ${
-                scrolled
-                  ? 'border-charcoal-800 text-charcoal-800 hover:bg-charcoal-800 hover:text-white'
-                  : 'border-white/70 text-white hover:bg-white hover:text-charcoal-800'
-              }`}
-            >
-              Admin
-            </button>
           </nav>
 
           <button
@@ -132,8 +124,21 @@ export default function Navbar({
             >
               <div className="flex items-center justify-between px-6 py-5 border-b border-charcoal-100">
                 <div className="flex items-center gap-2.5">
-                  <HardHat className="w-6 h-6 text-terracotta-500" strokeWidth={1.5} />
-                  <span className="font-display font-bold text-charcoal-800">El Gallego</span>
+                  {siteSettings?.logo_url ? (
+                    <img
+                      src={siteSettings.logo_url}
+                      alt="Constructora El Gallego"
+                      className="h-8 w-auto max-w-[160px] object-contain"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <>
+                      <HardHat className="w-6 h-6 text-terracotta-500" strokeWidth={1.5} />
+                      <span className="font-display font-bold text-charcoal-800">
+                        {siteSettings?.site_title || 'El Gallego'}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <button
                   onClick={() => setMobileOpen(false)}
@@ -154,12 +159,6 @@ export default function Navbar({
                     {link.label}
                   </a>
                 ))}
-                <button
-                  onClick={handleGoAdmin}
-                  className="btn-primary mt-6 w-full text-center"
-                >
-                  Panel Admin
-                </button>
               </nav>
             </motion.div>
           </motion.div>

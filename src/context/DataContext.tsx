@@ -6,17 +6,20 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { supabase, type Project, type Client, type Equipment } from '@/lib/supabase';
+import { supabase, type Project, type Client, type Equipment, type SiteSettings } from '@/lib/supabase';
 
 type DataContextType = {
   projects: Project[];
   clients: Client[];
   equipment: Equipment[];
+  siteSettings: SiteSettings;
   loading: boolean;
   error: string | null;
   refreshProjects: () => Promise<void>;
   refreshClients: () => Promise<void>;
   refreshEquipment: () => Promise<void>;
+  refreshSiteSettings: () => Promise<void>;
+  updateSiteSettings: (settings: Partial<SiteSettings>) => Promise<void>;
   addProject: (p: Omit<Project, 'id' | 'created_at'>) => Promise<void>;
   updateProject: (id: string, p: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
@@ -28,14 +31,33 @@ type DataContextType = {
   deleteEquipment: (id: string) => Promise<void>;
 };
 
+const defaultSettings: SiteSettings = {
+  id: 'default',
+  logo_url: '',
+  icon_url: '',
+  site_title: 'Constructora El Gallego',
+};
+
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchSiteSettings = useCallback(async () => {
+    try {
+      const { data } = await supabase.from('site_settings').select('*').eq('id', 'default').single();
+      if (data) {
+        setSiteSettings(data as unknown as SiteSettings);
+      }
+    } catch (err: unknown) {
+      console.warn('Failed to fetch site settings:', err);
+    }
+  }, []);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -95,7 +117,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     (async () => {
       try {
-        await Promise.all([fetchProjects(), fetchClients(), fetchEquipment()]);
+        await Promise.all([fetchProjects(), fetchClients(), fetchEquipment(), fetchSiteSettings()]);
       } catch (err) {
         console.error('Initial data load error:', err);
       } finally {
@@ -107,7 +129,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [fetchProjects, fetchClients, fetchEquipment]);
+  }, [fetchProjects, fetchClients, fetchEquipment, fetchSiteSettings]);
+
+  // Update browser tab favicon whenever siteSettings.icon_url changes
+  useEffect(() => {
+    if (siteSettings?.icon_url) {
+      const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement | null;
+      if (link) {
+        link.href = siteSettings.icon_url;
+      } else {
+        const newLink = document.createElement('link');
+        newLink.rel = 'shortcut icon';
+        newLink.href = siteSettings.icon_url;
+        document.head.appendChild(newLink);
+      }
+    }
+  }, [siteSettings?.icon_url]);
+
+  const updateSiteSettings = useCallback(async (newSettings: Partial<SiteSettings>) => {
+    const updated = {
+      ...siteSettings,
+      ...newSettings,
+      id: 'default',
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('site_settings').upsert(updated);
+    if (error) throw error;
+    setSiteSettings(updated);
+    await fetchSiteSettings();
+  }, [siteSettings, fetchSiteSettings]);
 
   const addProject = useCallback(async (p: Omit<Project, 'id' | 'created_at'>) => {
     const { error } = await supabase.from('projects').insert([p]);
@@ -169,11 +219,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         projects,
         clients,
         equipment,
+        siteSettings,
         loading,
         error,
         refreshProjects: fetchProjects,
         refreshClients: fetchClients,
         refreshEquipment: fetchEquipment,
+        refreshSiteSettings: fetchSiteSettings,
+        updateSiteSettings,
         addProject,
         updateProject,
         deleteProject,

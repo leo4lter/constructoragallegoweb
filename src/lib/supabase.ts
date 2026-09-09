@@ -28,6 +28,26 @@ export type Equipment = {
   created_at?: string;
 };
 
+export type SiteSettings = {
+  id: string;
+  logo_url: string;
+  icon_url: string;
+  site_title?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export const initialSiteSettings: SiteSettings[] = [
+  {
+    id: 'default',
+    logo_url: '', // Empty string means use the default brand symbol / name
+    icon_url: '',
+    site_title: 'Constructora El Gallego',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
 export const initialProjects: Project[] = [
   {
     id: '1',
@@ -151,6 +171,7 @@ function getLocalTable(table: string): BaseRecord[] {
   if (table === 'projects') defaults = initialProjects;
   else if (table === 'clients') defaults = initialClients;
   else if (table === 'equipment') defaults = initialEquipment;
+  else if (table === 'site_settings') defaults = initialSiteSettings;
 
   try {
     safeStorage.setItem(`constructora_${table}`, JSON.stringify(defaults));
@@ -181,6 +202,19 @@ function createLocalMock() {
           }
           return Promise.resolve({ data: items, error: null });
         },
+        eq: (col: string, val: unknown) => {
+          const items = getLocalTable(table);
+          const filtered = items.filter((item) => item[col] === val);
+          return {
+            single: () => Promise.resolve({ data: filtered[0] || null, error: null }),
+            then: (resolve: (val: { data: BaseRecord[]; error: null }) => void) =>
+              Promise.resolve({ data: filtered, error: null }).then(resolve),
+          };
+        },
+        single: () => {
+          const items = getLocalTable(table);
+          return Promise.resolve({ data: items[0] || null, error: null });
+        },
       }),
       insert: (rows: BaseRecord[]) => {
         const existing = getLocalTable(table);
@@ -192,6 +226,26 @@ function createLocalMock() {
         const updated = [...newRows, ...existing];
         setLocalTable(table, updated);
         return Promise.resolve({ data: newRows, error: null });
+      },
+      upsert: (rows: BaseRecord[] | BaseRecord) => {
+        const rowList = Array.isArray(rows) ? rows : [rows];
+        let existing = getLocalTable(table);
+        for (const row of rowList) {
+          const id = row.id || 'default';
+          const idx = existing.findIndex((item) => item.id === id);
+          const record = {
+            ...row,
+            id,
+            updated_at: new Date().toISOString(),
+          };
+          if (idx >= 0) {
+            existing[idx] = { ...existing[idx], ...record };
+          } else {
+            existing = [record, ...existing];
+          }
+        }
+        setLocalTable(table, existing);
+        return Promise.resolve({ data: rowList, error: null });
       },
       update: (updates: Partial<BaseRecord>) => ({
         eq: (column: string, value: unknown) => {
@@ -237,12 +291,40 @@ export const supabase = {
             const res = await realClient!.from(table).select(fields).order(col, options);
             if (res.error) {
               console.warn(`[AI Studio] Supabase error on ${table}.select, using local fallback:`, res.error);
-              return localMock.from(table).select().order(col, options);
+              return localMock.from(table).select(fields).order(col, options);
             }
             return res;
           } catch (e) {
             console.warn(`[AI Studio] Failed to fetch from Supabase table ${table}, using local fallback:`, e);
-            return localMock.from(table).select().order(col, options);
+            return localMock.from(table).select(fields).order(col, options);
+          }
+        },
+        eq: (col: string, val: unknown) => ({
+          single: async () => {
+            try {
+              const res = await realClient!.from(table).select(fields).eq(col, val).single();
+              if (res.error) {
+                console.warn(`[AI Studio] Supabase error on ${table}.single, using local fallback:`, res.error);
+                return localMock.from(table).select(fields).eq(col, val).single();
+              }
+              return res;
+            } catch (e) {
+              console.warn(`[AI Studio] Failed to fetch single from Supabase table ${table}, using local fallback:`, e);
+              return localMock.from(table).select(fields).eq(col, val).single();
+            }
+          },
+        }),
+        single: async () => {
+          try {
+            const res = await realClient!.from(table).select(fields).limit(1).single();
+            if (res.error) {
+              console.warn(`[AI Studio] Supabase error on ${table}.single, using local fallback:`, res.error);
+              return localMock.from(table).select(fields).single();
+            }
+            return res;
+          } catch (e) {
+            console.warn(`[AI Studio] Failed to fetch single from Supabase table ${table}, using local fallback:`, e);
+            return localMock.from(table).select(fields).single();
           }
         },
       }),
@@ -257,6 +339,19 @@ export const supabase = {
         } catch (e) {
           console.warn(`[AI Studio] Failed to insert to Supabase table ${table}, using local fallback:`, e);
           return localMock.from(table).insert(rows);
+        }
+      },
+      upsert: async (rows: BaseRecord[] | BaseRecord) => {
+        try {
+          const res = await realClient!.from(table).upsert(rows);
+          if (res.error) {
+            console.warn(`[AI Studio] Supabase error on ${table}.upsert, using local fallback:`, res.error);
+            return localMock.from(table).upsert(rows);
+          }
+          return res;
+        } catch (e) {
+          console.warn(`[AI Studio] Failed to upsert in Supabase table ${table}, using local fallback:`, e);
+          return localMock.from(table).upsert(rows);
         }
       },
       update: (updates: Partial<BaseRecord>) => ({
@@ -290,5 +385,20 @@ export const supabase = {
         },
       }),
     };
+  },
+  storage: {
+    from: (bucket: string) => {
+      if (!realClient) {
+        return {
+          upload: async (path: string) => {
+            return { data: { path }, error: null };
+          },
+          getPublicUrl: (path: string) => {
+            return { data: { publicUrl: path } };
+          },
+        };
+      }
+      return realClient.storage.from(bucket);
+    },
   },
 };

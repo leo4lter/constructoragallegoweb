@@ -5,6 +5,7 @@ import AdminDashboard from '@/components/admin/AdminDashboard';
 import ProjectsManager from '@/components/admin/ProjectsManager';
 import ClientsManager from '@/components/admin/ClientsManager';
 import EquipmentManager from '@/components/admin/EquipmentManager';
+import BrandingSettings from '@/components/admin/BrandingSettings';
 import { safeSessionStorage } from '@/lib/storage';
 
 export default function AdminPage({ onGoHome }: { onGoHome?: () => void }) {
@@ -32,6 +33,7 @@ export default function AdminPage({ onGoHome }: { onGoHome?: () => void }) {
       onGoHome={onGoHome}
     >
       {section === 'dashboard' && <AdminDashboard onNavigate={setSection} />}
+      {section === 'branding' && <BrandingSettings />}
       {section === 'projects' && <ProjectsManager />}
       {section === 'clients' && <ClientsManager />}
       {section === 'equipment' && <EquipmentManager />}
